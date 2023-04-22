@@ -1,4 +1,4 @@
-# Operating Systems Assignment 2  
+# OS_Ex2 
 ## system environment: 
 Ubuntu 20.04 LTS
 
