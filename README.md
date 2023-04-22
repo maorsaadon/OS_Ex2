@@ -1,11 +1,15 @@
 # OS_Ex2 
-## system environment: 
-Ubuntu 20.04 LTS
 
-## how to run the program:
-1. get all files into one directory
-2. execute "make"
-3. run any of the following tools
+## Download & run the program 
+
+  In order to run this project follow this steps:  
+  1. Download zip from our reposetory : push on code -> Download zip.  
+  2. Extract all on yor computer.  
+  3. Open a new java project.  
+  4. Open the file in the workspace - Ubuntu 20.04 LTS.   
+  5. execute "make all"  
+  6. run any of the following tools 
+  
 
 ## cmp tool usage:
 ### in stshell:
