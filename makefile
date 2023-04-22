@@ -15,7 +15,7 @@ encode: encode.c headers.h
 	$(CC) $(FLAGS) encode encode.c ./libcodecA.so ./libcodecB.so
 decode: decode.c headers.h
 	$(CC) $(FLAGS) decode decode.c ./libcodecA.so ./libcodecB.so
-stshell: stshell.c
+shell: shell.c
 	$(CC) $(FLAGS) shell shell.c
 clean:
 	rm cmp copy encode decode shell libcodecA.so libcodecB.so

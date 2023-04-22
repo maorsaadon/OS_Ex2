@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 
     char *output;
     
-    if (strcmp(argv[1], "codecA")) {
+    if (strcmp(argv[1], "codecA") == 0) {
        output = encode_codecA(argv[2]);
     } else if (strcmp(argv[1], "codecB") == 0) {
         output = encode_codecB(argv[2]);
@@ -22,6 +22,5 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Encoded string: %s\n", output);
-    free(output);
     return 0;
 }
