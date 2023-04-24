@@ -12,32 +12,20 @@
   
 
 ## cmp:
-### in stshell:
-cmp ˂filename1˃ ˂filename2˃ [-v] [-i]
-### in other terminals:
 ./cmp ˂filename1˃ ˂filename2˃ [-v] [-i]
 
 both files should exist on the disk.
 
 ## copy:
-### in stshell:
-copy ˂filename1˃ ˂filename2˃ [-v] [-f]
-### in other terminals:
 ./copy ˂filename1˃ ˂filename2˃ [-v] [-f]
 
 the first file should exist on the disk.
 if the [-f] flag is not written, the second file should not exist on the disk.
 
 ## encode:
-### in stshell:
-encode ˂codecA/codecB˃ ˂message˃
-### in other terminals:
 ./encode ˂codecA/codecB˃ ˂message˃
 
-## decode: 
-### in stshell: 
-decode ˂codecA/codecB˃ ˂message˃
-### in other terminals:
+## decode:
 ./decode ˂codecA/codecB˃ ˂message˃
 
 ## stshell:
