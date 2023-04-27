@@ -23,10 +23,10 @@ void signal_handler(int signal)
 }
 
 // Define a function to execute a command with arguments using the execvp() function
-void exec(int start, int end, char *argv[10])
+char **exec(int start, int end, char *argv[10])
 {
-    char *argv_new[10]; // Create a new array to store the command and its arguments
-    int index = 0;      // Initialize an index variable to keep track of the current position in the new array
+    char **argv_new = (char **)malloc(10 * sizeof(char *)); // Create a new array to store the command and its arguments
+    int index = 0;                                          // Initialize an index variable to keep track of the current position in the new array
     // Copy the arguments from the original array to the new array
     while (index < end)
     {
@@ -36,69 +36,51 @@ void exec(int start, int end, char *argv[10])
     }
     // Set the last element of the new array to NULL (required by execvp())
     argv_new[index] = NULL;
-    // Call execvp() to execute the command with its arguments
-    execvp(argv_new[0], argv_new);
+    return argv_new;
 }
 
 // Define a function to handle single output redirection
-void single_rediract(int start, int argc, int redirect, char *argv[10])
+char **single_rediract(int start, int argc, int redirect, char *argv[10])
 {
     // Check if there are enough arguments to perform the redirection
     if (argc <= redirect)
         exit(3); // If not, exit the program with an error code 3
-    else
+    else         // If there are enough arguments
     {
-        // If there are enough arguments
-        char *argv_new[10]; // Create a new array to store the command and its arguments
-        int index = 0;      // Initialize an index variable to keep track of the current position in the new array
-        // Copy the arguments before the redirect symbol to the new array
-        while (index < redirect - 1)
-        {
-            argv_new[index] = argv[start];
-            start++;
-            index++;
-        }
-        // Set the last element of the new array to NULL (required by execvp())
-        argv_new[index] = NULL;
+
         // Open the file specified by the redirect symbol for writing
         FILE *fd = fopen(argv[redirect], "w");
         // Redirect stdout to the file
-        dup2(fileno(fd), 1);
+        if (dup2(fileno(fd), 1) == -1)
+            exit(2);
         // Close the file
         fclose(fd);
-        // Call execvp() to execute the command with its arguments
-        execvp(argv_new[0], argv_new);
+
+        char **argv_new = (char **)malloc(10 * sizeof(char *)); // Create a new array to store the command and its arguments
+        argv_new = exec(start, redirect - 1, argv);
+        return argv_new;
     }
 }
 
 // Define a function to handle double output redirection
-void double_rediract(int start, int argc, int redirect, char *argv[10])
+char **double_rediract(int start, int argc, int redirect, char *argv[10])
 {
     // Check if there are enough arguments to perform the redirection
     if (argc <= redirect)
         exit(4); // If not, exit the program with an error code 4
-    else
+    else         // If there are enough arguments
     {
-        // If there are enough arguments
-        char *argv_new[10]; // Create a new array to store the command and its arguments
-        int index = 0;      // Initialize an index variable to keep track of the current position in the new array
-        // Copy the arguments before the redirect symbol to the new array
-        while (index < redirect - 1)
-        {
-            argv_new[index] = argv[start];
-            start++;
-            index++;
-        }
-        // Set the last element of the new array to NULL (required by execvp())
-        argv_new[index] = NULL;
         // Open the file specified by the redirect symbol for append
         FILE *fd = fopen(argv[redirect], "a");
         // Redirect stdout to the file
-        dup2(fileno(fd), 1);
+        if (dup2(fileno(fd), 1) == -1)
+            exit(2);
         // Close the file
         fclose(fd);
-        // Call execvp() to execute the command with its arguments
-        execvp(argv_new[0], argv_new);
+
+        char **argv_new = (char **)malloc(10 * sizeof(char *)); // Create a new array to store the command and its arguments
+        argv_new = exec(start, redirect - 1, argv);
+        return argv_new;
     }
 }
 
@@ -106,17 +88,17 @@ void double_rediract(int start, int argc, int redirect, char *argv[10])
 void error_handler(int error)
 {
     // Print an error message in red
-    printf("\033[0;31merror: \033[0m");
+    printf("\n\033[0;31merror: \033[0m\n");
     // Use a switch statement to determine which error occurred and print an appropriate error message
     if (error == 1)
         printf("Pipes part failed\n");
-    if (error == 2)
+    else if (error == 2)
         printf("Error with dup2\n");
-    if (error == 3)
+    else if (error == 3)
         printf("single rediract - wrong command\n");
-    if (error == 4)
+    else if (error == 4)
         printf("double rediract - wrong command\n");
-    if (error == 5)
+    else if (error == 5)
         printf("Signal error\n");
 }
 
@@ -141,14 +123,14 @@ int main()
         command[strlen(command) - 1] = '\0'; // replace \n with \0
 
         // handle 'clear' command
-        if (strcmp(command, "clear") == 0)
+        if (!strcmp(command, "clear"))
         {
             clear_screen();
             continue;
         }
 
         // handle 'exit' command
-        if (strcmp(command, "exit") == 0)
+        if (!strcmp(command, "exit"))
             exit(0);
 
         // set signal handler for SIGINT
@@ -159,49 +141,53 @@ int main()
         argc = 0;
         token = strtok(command, " ");
 
+        // loop through each token and add it to argv array
+        while (token != NULL)
+        {
+            argv[argc] = token;
+            // get next token
+            token = strtok(NULL, " ");
+            argc++;
+        }
+
+        // set last element of argv array to NULL
+        argv[argc] = NULL;
+
         // initialize variables to track I/O redirection and pipes
         int single_rediract_exist = -1;
         int double_rediract_exist = -1;
         int pipe_exist = 0;
         int pipes[] = {-1, -1};
-        int simple = 0;
+        int index = 0;
 
-        // loop through each token and add it to argv array
-        while (token != NULL)
+        while (index < argc)
         {
-            argv[argc] = token;
-
             // check for I/O single redirection
-            if (strcmp(token, ">") == 0)
+            if (!strcmp(argv[index], ">"))
             {
                 if (single_rediract_exist == -1)
-                    single_rediract_exist = argc;
+                    single_rediract_exist = index;
             }
             // check for I/O double redirection
-            else if (strcmp(token, ">>") == 0)
+            else if (!strcmp(argv[index], ">>"))
             {
                 if (double_rediract_exist == -1)
-                    double_rediract_exist = argc;
+                    double_rediract_exist = index;
             }
             // check for pipes
-            else if (strcmp(token, "|") == 0)
+            else if (!strcmp(argv[index], "|"))
             {
                 if (pipe_exist < 2)
                 {
                     if (pipes[pipe_exist] == -1)
                     {
-                        pipes[pipe_exist] = argc;
+                        pipes[pipe_exist] = index;
                         pipe_exist++;
                     }
                 }
             }
-            // get next token
-            token = strtok(NULL, " ");
-            argc++;
+            index++;
         }
-        // set last element of argv array to NULL
-        argv[argc] = NULL;
-
         // if command is empty, continue to next iteration of loop
         if (argv[0] == NULL)
             continue;
@@ -236,7 +222,11 @@ int main()
                     close(fd[1]);
                     // Execute the command specified by argv, reading from the read end of the pipe (pipes[0])
                     // The first argument (0) is not used by this implementation of exec, but is required by convention
-                    exec(0, pipes[0], argv);
+                    char **argv_before = (char **)malloc(10 * sizeof(char *));
+                    argv_before = exec(0, pipes[0], argv);
+                    // Call execvp() to execute the command with its arguments
+                    execvp(argv_before[0], argv_before);
+                    free(argv_before);
                 }
                 else
                 {
@@ -255,17 +245,21 @@ int main()
                         // Close the original file descriptor for the write end of the pipe (since we've duplicated it to standard output)
                         close(fd[0]);
 
+                        char **argv_after = (char **)malloc(10 * sizeof(char *));
                         // check if there is a single redirection
                         // redirect the standard output to the specified file in write mode
                         if (single_rediract_exist != -1)
-                            single_rediract(pipes[0] + 1, argc, single_rediract_exist + 1, argv);
+                            argv_after = single_rediract(pipes[0] + 1, argc, single_rediract_exist + 1, argv);
                         // check if there is a double redirection
                         // redirect the standard output to the specified file in append mode
                         else if (double_rediract_exist != -1)
-                            single_rediract(pipes[0] + 1, argc, double_rediract_exist + 1, argv);
+                            argv_after = double_rediract(pipes[0] + 1, argc, double_rediract_exist + 1, argv);
                         // execute the second command
                         else
-                            exec(pipes[0] + 1, argc, argv);
+                            argv_after = exec(pipes[0] + 1, argc, argv);
+                        // Call execvp() to execute the command with its arguments
+                        execvp(argv_after[0], argv_after);
+                        free(argv_after);
                     }
                     // current process is the parent process
                     else
@@ -301,7 +295,11 @@ int main()
                     close(fd1[1]);
 
                     // Execute the first command
-                    exec(0, pipes[0], argv);
+                    char **argv_before = (char **)malloc(10 * sizeof(char *));
+                    argv_before = exec(0, pipes[0], argv);
+                    // Call execvp() to execute the command with its arguments
+                    execvp(argv_before[0], argv_before);
+                    free(argv_before);
                 }
                 else
                 {
@@ -327,7 +325,10 @@ int main()
                         close(fd2[1]);
 
                         // Execute the second command
-                        exec(pipes[0] + 1, pipes[1], argv);
+                        char **argv_middle = (char **)malloc(10 * sizeof(char *));
+                        argv_middle = exec(pipes[0] + 1, pipes[1], argv);
+                        // Call execvp() to execute the command with its arguments
+                        execvp(argv_middle[0], argv_middle);
                     }
                     else
                     {
@@ -348,17 +349,22 @@ int main()
                                 exit(2);
                             close(fd2[0]);
 
+                            char **argv_after = (char **)malloc(10 * sizeof(char *));
+
                             // check if there is a single redirection
                             // redirect the standard output to the specified file in write mode
                             if (single_rediract_exist != -1)
-                                single_rediract(pipes[1] + 1, argc, single_rediract_exist + 1, argv);
+                                argv_after = single_rediract(pipes[1] + 1, argc, single_rediract_exist + 1, argv);
                             // check if there is a double redirection
                             // redirect the standard output to the specified file in append mode
-                            if (double_rediract_exist != -1)
-                                single_rediract(pipes[1] + 1, argc, double_rediract_exist + 1, argv);
+                            else if (double_rediract_exist != -1)
+                                argv_after = double_rediract(pipes[1] + 1, argc, double_rediract_exist + 1, argv);
                             // execute the third command
                             else
-                                exec(pipes[1] + 1, argc, argv);
+                                argv_after = exec(pipes[1] + 1, argc, argv);
+                            // Call execvp() to execute the command with its arguments
+                            execvp(argv_after[0], argv_after);
+                            free(argv_after);
                         }
                         else
                         {
@@ -375,11 +381,23 @@ int main()
             // check if there is a single redirection
             // redirect the standard output to the specified file in write mode
             else if (single_rediract_exist != -1)
-                single_rediract(0, argc, single_rediract_exist + 1, argv);
+            {
+                char **single_argv = (char **)malloc(10 * sizeof(char *));
+                single_argv = single_rediract(0, argc, single_rediract_exist + 1, argv);
+                // Call execvp() to execute the command with its arguments
+                execvp(single_argv[0], single_argv);
+                free(single_argv);
+            }
             // check if there is a double redirection
             // redirect the standard output to the specified file in append mode
             else if (double_rediract_exist != -1)
-                double_rediract(0, argc, double_rediract_exist + 1, argv);
+            {
+                char **double_argv = (char **)malloc(10 * sizeof(char *));
+                double_argv = double_rediract(0, argc, double_rediract_exist + 1, argv);
+                // Call execvp() to execute the command with its arguments
+                execvp(double_argv[0], double_argv);
+                free(double_argv);
+            }
 
             wait(NULL);
             exit(0);
@@ -394,7 +412,8 @@ int main()
                 // Get the exit code of the child process
                 int exit_code = WEXITSTATUS(status);
                 // Handle errors if any
-                error_handler(exit_code);
+                if (1 <= exit_code && exit_code <= 5)
+                    error_handler(exit_code);
             }
         }
     }
