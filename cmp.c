@@ -3,97 +3,99 @@
 #include <string.h>
 #include <ctype.h>
 
-int cmp(char *file1, char *file2, int verbose, int ignore_case) {
-    FILE *f1 = fopen(file1, "rb");
-    FILE *f2 = fopen(file2, "rb");
+#define SIZE 1024
 
-    if (f1 == NULL || f2 == NULL) {
-        perror("Error opening file");
-        return 1;
+
+int check_equal(char *name_of_file1 , char *name_of_file2, int want_i_operation){
+
+    FILE *f1;
+    FILE *f2;
+
+    f1 = fopen(name_of_file1,"r");
+    if(f1 == NULL){
+        perror(name_of_file1);
+        exit(1);
     }
 
-    int ch1, ch2;
-    int is_equal = 1;
-    int line_num = 1;
+    f2 = fopen(name_of_file2,"r");
+    if(f2 == NULL){
+        perror(name_of_file2);
+        exit(1);
+    }
 
-    while ((ch1 = fgetc(f1)) != EOF && (ch2 = fgetc(f2)) != EOF) {
-        if (ignore_case) {
-            ch1 = tolower(ch1);
-            ch2 = tolower(ch2);
-        }
+    char c1;
+    char c2;
 
-        if (ch1 != ch2) {
-            is_equal = 0;
-
-            if (verbose) {
-                printf("Files %s and %s differ at line %d\n", file1, file2, line_num);
-                break;
-            } else {
-                break;
+    
+    while(!feof(f1) || !feof(f2)){
+        c1 = fgetc(f1);
+        c2 = fgetc(f2);
+        if(want_i_operation == 1){
+            c1 = tolower(c1);
+            c2 = tolower(c2);
+            if(c1 != c2){
+                return 1;
             }
         }
-
-        if (ch1 == '\n') {
-            line_num++;
+        else{
+            if(c1 != c2){
+                return 1;
+            }
         }
     }
 
-    if (is_equal && fgetc(f1) != fgetc(f2)) {
-        is_equal = 0;
-
-        if (verbose) {
-            printf("Files %s and %s have different lengths\n", file1, file2);
-        }
+    if((!feof(f1) && feof(f2)) || (feof(f2) && !feof(f2))){
+     
+        return 1;
+    
     }
 
-    fclose(f1);
-    fclose(f2);
-
-    if (is_equal) {
-        if (verbose) {
-            printf("Files %s and %s are equal\n", file1, file2);
-        }
-
-        return 0;
-    } else {
-        if (verbose == 0) {
-            return 1;
-        } else {
-            return 1;
-        }
-    }
+    return 0;
 }
 
-int main(int argc, char *argv[]) {
-    int verbose = 0;
-    int ignore_case = 0;
 
-    if (argc != 3 && argc != 4) {
-        printf("Usage: cmp <file1> <file2> [-v] [-i]\n");
+int main(int argc, char **argv){
+
+    char *name_of_file1 = NULL;
+    char *name_of_file2 = NULL;
+
+    int want_v_operation = 0;
+    int want_i_operation = 0;
+
+    for(int i=1; i<argc; i++){
+        if(strcmp(argv[i], "-v") == 0){
+            want_v_operation = 1;
+        }
+        else if(strcmp(argv[i], "-i") == 0){
+            want_i_operation = 1;
+        }
+        else if(name_of_file1 == NULL){
+            name_of_file1 = argv[i];
+        }
+        else if(name_of_file2 == NULL){
+            name_of_file2 = argv[i];
+        }
+        else{
+            printf("Invaild Input! Need to be in this format : ./cmp <file1> <file2> [-v] [-i]\n");
+            return -1;
+        }
+    }
+
+    if(name_of_file1 == NULL || name_of_file2 == NULL){
+        printf("Error: You must specify two file names.\n");
         return 1;
     }
 
-    if (argc == 4) {
-        if (strcmp(argv[3], "-v") == 0) {
-            verbose = 1;
-        } else if (strcmp(argv[3], "-i") == 0) {
-            ignore_case = 1;
-        } else {
-            printf("Unknown option: %s\n", argv[3]);
-            return 1;
+    else if(want_v_operation == 1){
+        int result = check_equal(name_of_file1, name_of_file2, want_i_operation);
+        
+        if(result == 0){
+            printf("equal\n");
+        }
+        else{
+            printf("distinct\n");
         }
     }
 
-    if (argc == 5) {
-        if (strcmp(argv[4], "-v") == 0) {
-            verbose = 1;
-        } else if (strcmp(argv[4], "-i") == 0) {
-            ignore_case = 1;
-        } else {
-            printf("Unknown option: %s\n", argv[4]);
-            return 1;
-        }
-    }
-
-    return cmp(argv[1], argv[2], verbose, ignore_case);
+    return 0;
 }
