@@ -13,7 +13,6 @@ int copy_file(char *name_of_file1 , char *name_of_file2, int want_f_operation){
 
     FILE *f1;
     FILE *f2;
-    FILE *f2_a;
 
     // checking if source file is exists
     f1 = fopen(name_of_file1 , "rb");
