@@ -1,83 +1,111 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 
-void print_usage(char *program_name) {
-    printf("Usage: %s <source_file> <destination_file> [-v] [-f]\n", program_name);
-}
+#define SIZE 1024
 
-int main(int argc, char *argv[]) {
-    int opt, verbose = 0, force = 0;
-    while ((opt = getopt(argc, argv, "vf")) != -1) {
-        switch (opt) {
-            case 'v':
-                verbose = 1;
-                break;
-            case 'f':
-                force = 1;
-                break;
-            default:
-                print_usage(argv[0]);
-                return 1;
+
+int copy_file(char *name_of_file1 , char *name_of_file2, int want_f_operation){
+
+    FILE *f1;
+    FILE *f2;
+    FILE *f2_a;
+
+    // checking if source file is exists
+    f1 = fopen(name_of_file1 , "rb");
+    if(f1 == NULL){
+        printf("There is no file to copy from!\n");
+        return 1;
+    }
+
+    // checking if destantion file is already exists that will pr
+    f2 = fopen(name_of_file2 , "rb");
+    if(f2 != NULL){
+     // file2 is exists
+        if(want_f_operation != 1){
+            printf("target file exists\n");
+            fclose(f1);
+            fclose(f2);
+            return 2;
         }
+        
     }
-    if (opt + 2 > argc) {
-        print_usage(argv[0]);
-        return 1;
-    }
-    char *source_file = argv[opt];
-    char *destination_file = argv[opt + 1];
 
-    if (access(source_file, F_OK) == -1) {
-        fprintf(stderr, "Error: %s does not exist\n", source_file);
+    f2 = fopen(name_of_file2, "w");
+    if(f2 == NULL){
+        printf("Cant create destination file\n");
+        fclose(f1);
         return 1;
     }
 
-    if (!force && access(destination_file, F_OK) != -1) {
-        fprintf(stderr, "Error: %s already exists\n", destination_file);
-        return 1;
-    }
-
-    int source_fd = open(source_file, O_RDONLY);
-    if (source_fd == -1) {
-        fprintf(stderr, "Error: cannot open %s (%s)\n", source_file, strerror(errno));
-        return 1;
-    }
-
-    int destination_fd = open(destination_file, O_WRONLY | O_CREAT | O_EXCL, 0644);
-    if (destination_fd == -1) {
-        fprintf(stderr, "Error: cannot create %s (%s)\n", destination_file, strerror(errno));
-        close(source_fd);
-        return 1;
-    }
-
-    char buffer[BUFSIZ];
-    ssize_t bytes_read;
-    while ((bytes_read = read(source_fd, buffer, BUFSIZ)) > 0) {
-        ssize_t bytes_written = write(destination_fd, buffer, bytes_read);
+    // copy to file 2 from file 1
+    
+    char buffer[1024];
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, 1024, f1)) > 0) {
+        size_t bytes_written =  fwrite(buffer, 1, bytes_read, f2);
         if (bytes_written == -1) {
-            fprintf(stderr, "Error: cannot write to %s (%s)\n", destination_file, strerror(errno));
-            close(source_fd);
-            close(destination_fd);
-            unlink(destination_file);
+            printf("Error: cannot write to destination file\n");
+            fclose(f2);
+            fclose(f1);
             return 1;
         }
     }
 
-    close(source_fd);
-    close(destination_fd);
+    fclose(f1);
+    fclose(f2);
 
-    if (bytes_read == -1) {
-        fprintf(stderr, "Error: cannot read from %s (%s)\n", source_file, strerror(errno));
-        unlink(destination_file);
+    return 0;
+
+
+}
+
+
+int main(int argc, char **argv){ 
+    
+    char *name_of_file1 = NULL;
+    char *name_of_file2 = NULL;
+
+    int want_v_operation = 0;
+    int want_f_operation = 0;
+
+    for(int i=1; i<argc; i++){
+        if(strcmp(argv[i], "-v") == 0){
+            want_v_operation = 1;
+        }
+        else if(strcmp(argv[i], "-f") == 0){
+            want_f_operation = 1;
+        }
+        else if(name_of_file1 == NULL){
+            name_of_file1 = argv[i];
+        }
+        else if(name_of_file2 == NULL){
+            name_of_file2 = argv[i];
+        }
+        else{
+            printf("Invaild Input! Need to be in this format : ./cmp <file1> <file2> [-v] [-i]\n");
+            return -1;
+        }
+    }
+
+    if(name_of_file1 == NULL || name_of_file2 == NULL){
+        printf("Error: You must specify two file names.\n");
         return 1;
     }
 
-    if (verbose) {
-        printf("Success: %s copied to %s\n", source_file, destination_file);
+    else if(want_v_operation == 1){
+        int result = copy_file(name_of_file1, name_of_file2, want_f_operation);
+        
+        if(result == 0){
+            printf("Success\n");
+        }
+        else if(result == 1){
+            printf("general failure\n");
+        }
     }
 
     return 0;
