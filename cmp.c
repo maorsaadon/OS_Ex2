@@ -5,20 +5,33 @@
 
 #define SIZE 1024
 
+/*
+    This is a C program that takes two file names as input along with optional flags "-v" and "-i".
+    The program compares the contents of the two files and prints "equal" if they are identical or "distinct" if they are different.
+*/
 
-int check_equal(char *name_of_file1 , char *name_of_file2, int want_i_operation){
+/*
+    The check_equal function opens the two files specified by their names and reads them character by character,
+    comparing each corresponding character.
+    If the -i flag is set, the characters are compared case-insensitively.
+    The function returns 0 if the files are equal, and 1 otherwise.
+*/
+int check_equal(char *name_of_file1, char *name_of_file2, int want_i_operation)
+{
 
     FILE *f1;
     FILE *f2;
 
-    f1 = fopen(name_of_file1,"r");
-    if(f1 == NULL){
+    f1 = fopen(name_of_file1, "r");
+    if (f1 == NULL)
+    {
         perror(name_of_file1);
         exit(1);
     }
 
-    f2 = fopen(name_of_file2,"r");
-    if(f2 == NULL){
+    f2 = fopen(name_of_file2, "r");
+    if (f2 == NULL)
+    {
         perror(name_of_file2);
         exit(1);
     }
@@ -26,35 +39,45 @@ int check_equal(char *name_of_file1 , char *name_of_file2, int want_i_operation)
     char c1;
     char c2;
 
-    
-    while(!feof(f1) || !feof(f2)){
+    while (!feof(f1) || !feof(f2))
+    {
         c1 = fgetc(f1);
         c2 = fgetc(f2);
-        if(want_i_operation == 1){
+        if (want_i_operation == 1)
+        {
             c1 = tolower(c1);
             c2 = tolower(c2);
-            if(c1 != c2){
+            if (c1 != c2)
+            {
                 return 1;
             }
         }
-        else{
-            if(c1 != c2){
+        else
+        {
+            if (c1 != c2)
+            {
                 return 1;
             }
         }
     }
 
-    if((!feof(f1) && feof(f2)) || (feof(f2) && !feof(f2))){
-     
+    if ((!feof(f1) && feof(f2)) || (feof(f2) && !feof(f2)))
+    {
+
         return 1;
-    
     }
 
     return 0;
 }
 
-
-int main(int argc, char **argv){
+/*
+    The main function parses the command line arguments and calls
+    check_equal with the appropriate parameters.
+    If the -v flag is set, it prints "equal" or "distinct" depending on the result of check_equal.
+    If there is an error in the input format, the program prints an error message and exits with a non-zero status code.
+*/
+int main(int argc, char **argv)
+{
 
     char *name_of_file1 = NULL;
     char *name_of_file2 = NULL;
@@ -62,37 +85,47 @@ int main(int argc, char **argv){
     int want_v_operation = 0;
     int want_i_operation = 0;
 
-    for(int i=1; i<argc; i++){
-        if(strcmp(argv[i], "-v") == 0){
+    for (int i = 1; i < argc; i++)
+    {
+        if (strcmp(argv[i], "-v") == 0)
+        {
             want_v_operation = 1;
         }
-        else if(strcmp(argv[i], "-i") == 0){
+        else if (strcmp(argv[i], "-i") == 0)
+        {
             want_i_operation = 1;
         }
-        else if(name_of_file1 == NULL){
+        else if (name_of_file1 == NULL)
+        {
             name_of_file1 = argv[i];
         }
-        else if(name_of_file2 == NULL){
+        else if (name_of_file2 == NULL)
+        {
             name_of_file2 = argv[i];
         }
-        else{
+        else
+        {
             printf("Invaild Input! Need to be in this format : ./cmp <file1> <file2> [-v] [-i]\n");
             return -1;
         }
     }
 
-    if(name_of_file1 == NULL || name_of_file2 == NULL){
+    if (name_of_file1 == NULL || name_of_file2 == NULL)
+    {
         printf("Error: You must specify two file names.\n");
         return 1;
     }
 
-    else if(want_v_operation == 1){
+    else if (want_v_operation == 1)
+    {
         int result = check_equal(name_of_file1, name_of_file2, want_i_operation);
-        
-        if(result == 0){
+
+        if (result == 0)
+        {
             printf("equal\n");
         }
-        else{
+        else
+        {
             printf("distinct\n");
         }
     }

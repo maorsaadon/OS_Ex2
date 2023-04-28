@@ -8,17 +8,32 @@
 #include <string.h>
 #include <signal.h>
 
+/*
+    clear_screen() -
+    This function clears the terminal screen by printing escape sequences "\033[H\033[J".
+*/
 void clear_screen()
 {
     printf("\033[H\033[J");
 }
 
+/*
+    signal_handler(int signal) -
+    This function is a signal handler that takes an integer signal as input and prints
+    "chiled process terminated" if the input signal is SIGINT.
+*/
 void signal_handler(int signal)
 {
     if (signal == SIGINT)
         printf("\nchiled process terminated\n");
 }
 
+/*
+    exec(int start, int end, char *argv[10]) -
+    This function takes in a starting index 'start', ending index 'end', and an array of strings 'argv'.
+    It copies the strings between 'start' and 'end' from the input 'argv' array to a new 'argv_new' array and sets the last element of this new array to NULL.
+    The function then calls the execvp system call with the first element of 'argv_new' as the command and 'argv_new' as the argument list.
+*/
 void exec(int start, int end, char *argv[10])
 {
     char *argv_new[10];
@@ -33,6 +48,13 @@ void exec(int start, int end, char *argv[10])
     execvp(argv_new[0], argv_new);
 }
 
+/*
+    rediract(int argc, int single_redirect, int double_redirect, char *argv[10]) -
+    This function takes in the number of arguments 'argc',
+    indices of single and double redirection operators 'single_redirect' and 'double_redirect', and an array of strings 'argv'.
+    If a redirection operator is present, it opens a file with appropriate flags and redirects stdout to that file using dup2 system call.
+    The function returns the value of 'end' which is used in subsequent parts of the program.
+*/
 int rediract(int argc, int single_redirect, int double_redirect, char *argv[10])
 {
     int end = -1;
@@ -66,6 +88,11 @@ int rediract(int argc, int single_redirect, int double_redirect, char *argv[10])
     return end;
 }
 
+/*
+    error_handler(int error) -
+    This function takes in an integer error code and prints appropriate error messages based on the error code.
+    This function is used for handling errors that occur during program execution.
+*/
 void error_handler(int error)
 {
     printf("\n\033[0;31merror: \033[0m\n");
@@ -85,6 +112,33 @@ void error_handler(int error)
         printf("More then two |\n");
 }
 
+/*
+    This is a C program that implements a simple shell. It allows the user to input commands and execute them.
+    The shell supports the following features:
+        1.Basic command execution
+        2.I/O redirection
+        3.Piping
+    The program starts with the main function that first ignores the SIGINT signal by setting it to SIG_IGN (ignore signal) and then initializes some variables:
+        1.status: an integer variable that stores the status of the child process
+        2.argc: an integer variable that stores the number of command-line arguments
+        3.argv: a character array that stores the command-line arguments
+        4.command: a character array that stores the command entered by the user
+        5.token: a character pointer used to tokenize the input command
+    The program then enters an infinite loop where it repeatedly prompts the user to enter a command and then processes the command.
+    The prompt is printed using ANSI escape codes to color the text blue.
+    The input command is read using the fgets function, which reads a line of text from the user.
+    The newline character at the end of the input is replaced with a null character.
+    If the user enters the "clear" command, the clear_screen function is called to clear the screen, and the loop continues.
+    If the user enters the "exit" command, the program exits.
+    The input command is then tokenized using the strtok function. The tokenized strings are stored in the argv array, and the number of arguments is stored in the argc variable.
+    The program also checks for the presence of I/O redirection symbols and piping symbols in the command.
+    The program then forks a child process to execute the command. If the fork fails, an error is raised.
+    If the command does not include I/O redirection or piping, the execvp function is called to execute the command.
+    If the command includes piping, a series of child processes are forked to handle the piping.
+    If the command includes I/O redirection, the rediract function is called to handle the redirection.
+    After the command is executed, the child process exits, and the parent process continues the loop.
+    If the user presses Ctrl+C, the SIGINT signal is ignored and the program does not exit.
+*/
 int main()
 {
 
