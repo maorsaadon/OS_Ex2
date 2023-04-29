@@ -4,11 +4,10 @@
 
   In order to run this project follow this steps:  
   1. Download zip from our reposetory : push on code -> Download zip.  
-  2. Extract all on yor computer.  
-  3. Open a new java project.  
-  4. Open the file in the workspace - Ubuntu 20.04 LTS.   
-  5. execute "make all"  
-  6. run any of the following tools 
+  2. Extract all on yor computer.    
+  3. Open the file in the workspace - Ubuntu 20.04 LTS.   
+  4. execute "make all"  
+  5. run any of the following tools 
   
 
 ## cmp:
